@@ -6,16 +6,4 @@
 # export AIRFLOW__CORE__DAGS_FOLDER="/workspaces/andy-sprague-take-home-exercise/src/dags"
 # export AIRFLOW__CORE__EXECUTOR="SequentialExecutor"
 
-airflow db migrate
-
-airflow users create \
-    --username admin \
-    --password 3zSR6dFRhFbmYvYs \
-    --firstname Andy \
-    --lastname Sprague \
-    --role Admin \
-    --email andy.sprague44@gmail.com
-
-airflow webserver --port 8080
-
-# airflow scheduler
+airflow scheduler

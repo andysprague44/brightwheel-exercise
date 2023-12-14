@@ -18,8 +18,8 @@
             "args":[
                 "tasks",
                 "test",
-                "tutorial",
-                "print_date",
+                "brightwheel_etl",
+                "extract",
                 "2022-09-10"
             ]
         }

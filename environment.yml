@@ -1,11 +1,9 @@
 name: brightwheel-andy
 
-# variables:
-#   AIRFLOW_HOME: ~/airflow
-
 dependencies:
   - python=3.11.5
   - pip=22.2.2
   - pip:
     - pytest~=7.4.3
+    - moto~=4.2.11
     - -r requirements.txt

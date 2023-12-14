@@ -6,6 +6,7 @@
 		"context": "..",
 		"dockerfile": "Dockerfile"
 	},
+	
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -13,7 +14,21 @@
 				"alexcvzz.vscode-sqlite"
 			]
 		}
-	}
+	},
+
+	//Env variables
+	"containerEnv": {
+		"AIRFLOW_HOME": "/workspaces/andy-sprague-take-home-exercise",
+		"AIRFLOW__CORE__LOAD_EXAMPLES": "False",
+		"AIRFLOW__CORE__DAGS_FOLDER": "/workspaces/andy-sprague-take-home-exercise/src/dags",
+		"AIRFLOW__CORE__EXECUTOR": "SequentialExecutor",
+		"AIRFLOW__DATABASE__SQL_ALCHEMY_CONN": "sqlite:////workspaces/andy-sprague-take-home-exercise/airflow.db"
+	},
+
+	//Use AWS credentials from host machine
+	"mounts": [
+		"source=${localEnv:HOME}${localEnv:USERPROFILE}/.aws,target=/root/.aws,type=bind"
+	],
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
@@ -28,5 +43,5 @@
 	// "customizations": {},
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
+	"remoteUser": "root"
 }
