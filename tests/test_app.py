@@ -54,3 +54,10 @@ def test_load_file_from_s3(s3):
     df = load_from_s3(BUCKET, 'data/Data_Eng_Exercise_Files/07-07-2023 Nevada Dept of Public _ Behavioral Health.csv')
     assert df is not None
     assert len(df) == 5
+
+
+def test_load_mapping():
+    from src.dags.common import load_mapping_columns
+    mapping_dict = load_mapping_columns('nevada')
+    assert mapping_dict is not None
+    assert 'Name' in mapping_dict

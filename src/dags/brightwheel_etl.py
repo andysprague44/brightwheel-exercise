@@ -1,8 +1,8 @@
 import json
 import pendulum
 from airflow.decorators import dag, task
-from common import load_from_s3
-
+from common import load_from_s3, load_mapping_columns, deduplicate, dataframe_to_s3, write_to_sqlite
+import pandas as pd
 
 @dag(
     schedule=None,
@@ -10,52 +10,65 @@ from common import load_from_s3
     catchup=False,
     tags=["example"],
 )
-def brightwheel_etl():
+def brightwheel_etl_nevada():
     """
     ### BrightWheel ETL take-home exercise
     This DAG is the submission to the take-home exercise, by Andy Sprague.
-    It loads from s3, does the transforms, and uploads to redshift
     """
 
     @task()
-    def extract():
+    def extract_nevada():
         """
         #### Extract task
         Read in the file(s) from s3.
         """
-        s3_path = 'data/Data_Eng_Exercise_Files/07-07-2023 Nevada Dept of Public _ Behavioral Health.csv'  # TODO parameterize
+        s3_path = 'data/Data_Eng_Exercise_Files/07-07-2023 Nevada Dept of Public _ Behavioral Health.csv'  # TODO parameterize?
+        bucket = 'brightwheel-andy' # TODO put in config
+        df = load_from_s3(bucket=bucket, s3_path=s3_path)
+
+        print(f'Loaded data with {len(df)} lines')
+
+        path = dataframe_to_s3(df, bucket, 'staging/nevada/07-07-2023/in.csv')
+        print(f'saved to {path}')
+        return path
+
+
+    @task()
+    def transform_nevada(s3_path: str):
+        """
+        #### Transform task
+        Takes the extracted dataframe and transform it to a common schema
+        """
         bucket = 'brightwheel-andy' # TODO put in config
         df = load_from_s3(bucket=bucket, s3_path=s3_path)
         
-        print(f'Loaded data with {len(df)} lines')
-        return df
+        mapping_dict = load_mapping_columns('nevada')
+        df = df[mapping_dict.keys()]
+        df = df.rename(columns=mapping_dict)
+        print(f'Transformed data')
 
+        
+        path = dataframe_to_s3(df, bucket, 'transformed/nevada/07-07-2023/in.csv')
+        print(f'saved to {path}')
 
-    @task(multiple_outputs=True)
-    def transform(df: pd.DataFrame):
-        """
-        #### Transform task
-        Takes the extracted datafarame and transform it to a common schema
-        """
-        total_order_value = 0
-
-        for value in order_data_dict.values():
-            total_order_value += value
-
-        return {"total_order_value": total_order_value}
+        return path
 
     @task()
-    def load(df: pd.DataFrame):
+    def load_nevada(s3_path: str):
         """
         #### Load task
         Take the dataframe from the transform task and load it to the target DB.
         """
+        bucket = 'brightwheel-andy' # TODO put in config
+        df = load_from_s3(bucket=bucket, s3_path=s3_path)
+        write_to_sqlite(df)        
+        return True
 
-        print(f"Total order value is: {total_order_value:.2f}")
+    
+    # Define 'task flow'
+    df_raw_path = extract_nevada()
+    df_transform_path = transform_nevada(df_raw_path)
+    load_is_complete = load_nevada(df_transform_path)
+    deduplicate(load_is_complete)
 
-    order_data = extract()
-    order_summary = transform(order_data)
-    load(order_summary["total_order_value"])
-
-
-tutorial_taskflow_api()
+brightwheel_etl_nevada()

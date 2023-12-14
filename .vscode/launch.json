@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name":"Airflow: print_date",
+            "name":"Airflow: brightwheel_etl_nevada",
             "type":"python",
             "request":"launch",
             "program":"/opt/conda/envs/brightwheel-andy/bin/airflow",
@@ -16,10 +16,9 @@
                 "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN": "sqlite:///${workspaceFolder}/airflow.db"
             },
             "args":[
-                "tasks",
+                "dags",
                 "test",
-                "brightwheel_etl",
-                "extract",
+                "brightwheel_etl_nevada",
                 "2022-09-10"
             ]
         }
