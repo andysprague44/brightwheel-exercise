@@ -1,0 +1,2 @@
+apache-airflow==2.7.3 --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.7.3/constraints-3.11.txt"
+boto3~=1.34.0

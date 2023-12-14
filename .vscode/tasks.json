@@ -1,0 +1,59 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        // {
+        //     "label": "clean-airflow-database",
+        //     "command": "rm -rf airflow.db",
+        //     "type":"shell"
+        // },
+        {
+            "label": "update-airflow-database",
+            "command": "echo $AIRFLOW__DATABASE__SQL_ALCHEMY_CONN",
+            // "command": "echo $AIRFLOW__DATABASE__SQL_ALCHEMY_CONN;/opt/conda/envs/brightwheel-andy/bin/airflow db migrate",
+            // "dependsOn": "clean-airflow-database",
+            "type":"shell",
+            "options": {
+                "env": {
+                    "AIRFLOW_HOME": "${workspaceFolder}",
+                    "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN": "sqlite:///${workspaceFolder}/airflow.db"
+                }
+            }
+        },
+        {
+            "label": "create-airflow-user",
+            "command": "/opt/conda/envs/brightwheel-andy/bin/airflow users create --username admin --firstname admin --lastname admin --password admin --role Admin --email admin@example.org",
+            "dependsOn": "update-airflow-database",
+            "type": "shell",
+            "options": {
+                "env": {
+                    "AIRFLOW_HOME": "${workspaceFolder}",
+                    "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN": "sqlite:///${workspaceFolder}/airflow.db"
+                }
+            }
+        },
+        {
+            "label": "import-airflow-variables",
+            "command": "if [ -f \"${workspaceFolder}/variables/dev/all.json\" ]; then airflow variables import ${workspaceFolder}/variables/dev/all.json; fi",
+            "type": "shell",
+            "dependsOn": "create-airflow-user",
+            "options":{
+                "env": {
+                    "AIRFLOW_HOME": "${workspaceFolder}",
+                    "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN": "sqlite:///${workspaceFolder}/airflow.db"
+                }
+            }
+        },
+        {
+            "label": "import-airflow-connections",
+            "command": "if [ -f \"${workspaceFolder}/connections/dev/all.json\" ]; then airflow connections import ${workspaceFolder}/connections/dev/all.json; fi",
+            "type": "shell",
+            "dependsOn": "import-airflow-variables",
+            "options":{
+                "env": {
+                    "AIRFLOW_HOME": "${workspaceFolder}",
+                    "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN": "sqlite:///${workspaceFolder}/airflow.db"
+                }
+            }
+        }
+    ]
+}

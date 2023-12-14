@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name":"Airflow: print_date",
+            "type":"python",
+            "request":"launch",
+            "program":"/opt/conda/envs/brightwheel-andy/bin/airflow",
+            "preLaunchTask": "import-airflow-variables",
+            "console": "integratedTerminal",
+            "env": {
+                "AIRFLOW_HOME": "${workspaceFolder}",
+                "AIRFLOW__CORE__LOAD_EXAMPLES": "False",
+                "AIRFLOW__CORE__DAGS_FOLDER": "${workspaceFolder}/src/dags",
+                "AIRFLOW__CORE__EXECUTOR": "SequentialExecutor",
+                "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN": "sqlite:///${workspaceFolder}/airflow.db"
+            },
+            "args":[
+                "tasks",
+                "test",
+                "tutorial",
+                "print_date",
+                "2022-09-10"
+            ]
+        }
+    ]
+}
