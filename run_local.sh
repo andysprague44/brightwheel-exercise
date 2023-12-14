@@ -10,7 +10,7 @@ airflow db migrate
 
 airflow users create \
     --username admin \
-    --password 3zSR6dFRhFbmYvYs \
+    --password admin \
     --firstname Andy \
     --lastname Sprague \
     --role Admin \
