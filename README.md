@@ -11,6 +11,8 @@
 **Choice**
 I decided to use Amazon Redshift as the target. This was largely due to it being the most recent OLAP database I have worked with, so will speed up development time. It also happens to be a decent choice for analytical use-cases.
 
+But, I ran out of time so used SQLite for the exercise (the default connection for the chosen ETL approach) - obviously would switch for prod use.
+
 ### ETL solution
 
 **Requirements**
@@ -82,4 +84,16 @@ Create conda env:
 - `conda activate brightwheel-andy`
 
 
+Run debug config in vs-code: 
+- `Airflow: brightwheel_etl_nevada`
 
+
+## Next steps
+
+I got it firing for 1 source in the alloted time. The next set of tasks would be:
+- extract common code to a set of reusable methods
+- define mapping and a DAG for each source (or define a single DAG that processes all files)
+- some smarter source-specific transforms, for example in Nevada, could possibly break the 'Name' field into first name / last name, extract the zip from the address field, etc.
+- would want to keep "replaced" records and mark them as 'soft' deleted (connect to redshift and use MERGE operations for this)
+- add unit testing of the DAG and tasks
+- split the methods in common.py into sensible separate files, e.g. common, s3_utils.py, sqlite_utils.py

@@ -37,14 +37,17 @@ def load_from_s3(bucket: str, s3_path: str) -> pd.DataFrame:
 
 
 def dataframe_to_s3(df, bucket, s3_path):
-        out_buffer = BytesIO()
-        df.to_csv(out_buffer, index=False)
-        s3 = boto3.client('s3')
-        s3.put_object(Bucket=bucket, Key=s3_path, Body=out_buffer.getvalue())
-        return s3_path
+    """Serializes a pandas DataFrame to s3"""
+    out_buffer = BytesIO()
+    df.to_csv(out_buffer, index=False)
+    s3 = boto3.client('s3')
+    s3.put_object(Bucket=bucket, Key=s3_path, Body=out_buffer.getvalue())
+    return s3_path
 
 
 def load_mapping_columns(state: str):
+    """Load a file that can define mapping from the source (aka state) to a common schema"""
+
     supported_states = ['nevada'] # , 'Oklahoma', 'Texas']
     state = state.lower()
     if state not in supported_states:
@@ -54,11 +57,14 @@ def load_mapping_columns(state: str):
     df = pd.read_csv(file_path)
     df = df[['target_column', state]]
     df = df.dropna(subset=state)
+    df.target_column = df.target_column.str.strip()
     mapping_dict = df.set_index(state)['target_column'].to_dict()
     return mapping_dict
 
 
 def write_to_sqlite(df: pd.DataFrame):
+    """Very simple write of data to sqlite, replacing data if it already exists
+    The table is created in script sqlite-setup.sh"""
     with sqlite3.connect(os.path.join(os.path.dirname(__file__), '..', '..', 'airflow.db')) as conn:
         try:
             c = conn.cursor()

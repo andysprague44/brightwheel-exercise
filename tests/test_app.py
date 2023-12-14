@@ -48,7 +48,6 @@ def test_list_s3_files(s3):
     assert len(files) == 3
     
 
-
 def test_load_file_from_s3(s3):
     from src.dags.common import load_from_s3
     df = load_from_s3(BUCKET, 'data/Data_Eng_Exercise_Files/07-07-2023 Nevada Dept of Public _ Behavioral Health.csv')
@@ -61,3 +60,4 @@ def test_load_mapping():
     mapping_dict = load_mapping_columns('nevada')
     assert mapping_dict is not None
     assert 'Name' in mapping_dict
+    assert mapping_dict['Name'] == 'company'
