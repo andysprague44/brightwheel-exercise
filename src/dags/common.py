@@ -11,6 +11,10 @@ from typing import Any
 from io import StringIO, BytesIO
 from airflow.decorators import task
 
+
+SUPPORTED_STATES = ['nevada'] # , 'Oklahoma', 'Texas']
+
+
 @task()
 def deduplicate(load_is_complete):
     """
@@ -45,21 +49,18 @@ def dataframe_to_s3(df, bucket, s3_path):
     return s3_path
 
 
-def load_mapping_columns(state: str):
-    """Load a file that can define mapping from the source (aka state) to a common schema"""
-
-    supported_states = ['nevada'] # , 'Oklahoma', 'Texas']
+def transform(df: pd.DataFrame, state: str) -> pd.DataFrame:
+    """Transforms the raw dataframe to a common data model.
+    TODO could provide state specific mapping here, such as extracting first and last name from 'Name' or some fuzzy matching (TextRazor).
+    """
     state = state.lower()
-    if state not in supported_states:
+    if state not in SUPPORTED_STATES:
         raise ValueError(f'State {state} not yet supported, must be one of [{", ".join(supported_states)}]')
 
-    file_path = os.path.join(os.path.dirname(__file__), 'column_mapping.csv')
-    df = pd.read_csv(file_path)
-    df = df[['target_column', state]]
-    df = df.dropna(subset=state)
-    df.target_column = df.target_column.str.strip()
-    mapping_dict = df.set_index(state)['target_column'].to_dict()
-    return mapping_dict
+    mapping_dict = _load_mapping_columns(state)
+    df = df[mapping_dict.keys()] # only keep mapped columns
+    df = df.rename(columns=mapping_dict) # rename columns
+    return df
 
 
 def write_to_sqlite(df: pd.DataFrame):
@@ -73,3 +74,17 @@ def write_to_sqlite(df: pd.DataFrame):
         except:
             conn.rollback()
             raise
+
+def _load_mapping_columns(state: str) -> dict:
+    """Load a dict that defines mapping from the source (aka state) to a common schema"""
+    state = state.lower()
+    if state not in SUPPORTED_STATES:
+        raise ValueError(f'State {state} not yet supported, must be one of [{", ".join(supported_states)}]')
+
+    file_path = os.path.join(os.path.dirname(__file__), 'column_mapping.csv')
+    df = pd.read_csv(file_path)
+    df = df[['target_column', state]]
+    df = df.dropna(subset=state)
+    df.target_column = df.target_column.str.strip()
+    mapping_dict = df.set_index(state)['target_column'].to_dict()
+    return mapping_dict

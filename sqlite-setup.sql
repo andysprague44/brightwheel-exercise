@@ -31,5 +31,6 @@ CREATE TABLE IF NOT EXISTS leads (
     title	text,
     website_address	text,
     zip	text,
-    facility_type	text
+    facility_type	text,
+    is_active 
 )

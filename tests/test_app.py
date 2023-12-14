@@ -2,8 +2,16 @@ import pytest
 import os
 import boto3
 from moto import mock_s3
+import pandas as pd
+import sqlite3
 
 BUCKET = "test-bucket"
+
+def __load_fixture_as_df(file_name):
+    """Load a test csv from fixture folder"""
+    file_path = os.path.join(os.path.dirname(__file__), "fixtures", file_name)
+    df = pd.read_csv(file_path)
+    return df
 
 @pytest.fixture(scope="function")
 def aws_credentials():
@@ -13,8 +21,6 @@ def aws_credentials():
     os.environ["AWS_SECURITY_TOKEN"] = "testing"
     os.environ["AWS_SESSION_TOKEN"] = "testing"
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-
-
 
 
 @pytest.fixture(scope="function")
@@ -56,8 +62,50 @@ def test_load_file_from_s3(s3):
 
 
 def test_load_mapping():
-    from src.dags.common import load_mapping_columns
-    mapping_dict = load_mapping_columns('nevada')
+    from src.dags.common import _load_mapping_columns
+    mapping_dict = _load_mapping_columns('nevada')
     assert mapping_dict is not None
     assert 'Name' in mapping_dict
     assert mapping_dict['Name'] == 'company'
+
+
+def test_transform():
+    # Assemble
+    from src.dags.common import transform
+    df = __load_fixture_as_df("07-07-2023 Nevada Dept of Public _ Behavioral Health.csv")
+
+    #Act
+    df = transform(df, 'nevada')
+
+    #Used to generate input for next test
+    # file_path = os.path.join(os.path.dirname(__file__), "fixtures", 'tranformed-nevada.csv')
+    # df.to_csv(file_path, index=False)
+
+    #Assert
+    assert df is not None
+    assert 'company' in df.columns
+    assert df.iloc[0].company == 'SUNSHINE ACADEMY PRE-SCHOOL'
+
+
+def test_write_to_target_db():
+    from src.dags.common import write_to_sqlite
+    df = __load_fixture_as_df("tranformed-nevada.csv")
+    write_to_sqlite(df)
+
+    with sqlite3.connect(os.path.join(os.path.dirname(__file__), '..', 'airflow.db')) as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM leads WHERE company = 'SUNSHINE ACADEMY PRE-SCHOOL'")
+        rows = cur.fetchall()
+    assert rows is not None
+    assert len(rows) == 1
+    assert rows[0][4] == 'CLARK' # county
+
+    #writing again should replace not add
+    df.iloc[0].county = 'NOT CLARK'
+    write_to_sqlite(df)
+    with sqlite3.connect(os.path.join(os.path.dirname(__file__), '..', 'airflow.db')) as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM leads WHERE company = 'SUNSHINE ACADEMY PRE-SCHOOL'")
+        rows = cur.fetchall()
+    assert len(rows) == 1
+    assert rows[0][4] == 'NOT CLARK' # county

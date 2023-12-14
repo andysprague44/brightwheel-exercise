@@ -1,8 +1,10 @@
 import json
 import pendulum
 from airflow.decorators import dag, task
-from common import load_from_s3, load_mapping_columns, deduplicate, dataframe_to_s3, write_to_sqlite
+from common import load_from_s3, load_mapping_columns, deduplicate, dataframe_to_s3, write_to_sqlite, transform
 import pandas as pd
+
+BUCKET = 'brightwheel-andy' # TODO put in config
 
 @dag(
     schedule=None,
@@ -23,12 +25,10 @@ def brightwheel_etl_nevada():
         Read in the file(s) from s3.
         """
         s3_path = 'data/Data_Eng_Exercise_Files/07-07-2023 Nevada Dept of Public _ Behavioral Health.csv'  # TODO parameterize?
-        bucket = 'brightwheel-andy' # TODO put in config
-        df = load_from_s3(bucket=bucket, s3_path=s3_path)
-
+        
+        df = load_from_s3(bucket=BUCKET, s3_path=s3_path)
         print(f'Loaded data with {len(df)} lines')
-
-        path = dataframe_to_s3(df, bucket, 'staging/nevada/07-07-2023/in.csv')
+        path = dataframe_to_s3(df, BUCKET, 'staging/nevada/07-07-2023/in.csv')
         print(f'saved to {path}')
         return path
 
@@ -39,16 +39,10 @@ def brightwheel_etl_nevada():
         #### Transform task
         Takes the extracted dataframe and transform it to a common schema
         """
-        bucket = 'brightwheel-andy' # TODO put in config
-        df = load_from_s3(bucket=bucket, s3_path=s3_path)
-        
-        mapping_dict = load_mapping_columns('nevada')
-        df = df[mapping_dict.keys()]
-        df = df.rename(columns=mapping_dict)
+        df = load_from_s3(bucket=BUCKET, s3_path=s3_path)
+        df = transform(df, 'nevada')
         print(f'Transformed data')
-
-        
-        path = dataframe_to_s3(df, bucket, 'transformed/nevada/07-07-2023/in.csv')
+        path = dataframe_to_s3(df, BUCKET, 'transformed/nevada/07-07-2023/in.csv')
         print(f'saved to {path}')
 
         return path
@@ -59,8 +53,7 @@ def brightwheel_etl_nevada():
         #### Load task
         Take the dataframe from the transform task and load it to the target DB.
         """
-        bucket = 'brightwheel-andy' # TODO put in config
-        df = load_from_s3(bucket=bucket, s3_path=s3_path)
+        df = load_from_s3(bucket=BUCKET, s3_path=s3_path)
         write_to_sqlite(df)        
         return True
 
